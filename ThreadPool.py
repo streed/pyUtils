@@ -1,7 +1,7 @@
 """
 	ThreadPool.py -- Implement a simple thread pool.
 	
-	by elchupa
+	by sean
 """
 
 import threading
@@ -18,16 +18,14 @@ class Worker( threading.Thread ):
 		self.event = event
 		self.start()
 
-		self.logger = logging.getLogger( "ThreadPool.Worker" )
-
 	def run( self ):
 		while not self.event.is_set():
 			func, args, kargs = self.jobs.get()
-			self.logger.info( "Got Work" )
+
 			try: 
 				func( *args, **kargs )
 			except Exception, e:
-				self.logger.info( str( e ) )
+				pass
 			self.jobs.task_done()
 
 class ThreadPool:
@@ -38,13 +36,8 @@ class ThreadPool:
 		for _ in range( numThreads ):
 			Worker( self.event, self.jobs )
 
-		self.logger = logging.getLogger( "PoolManager.ThreadPool" )
-
 	def addJob( self, func, *args, **kargs ):
 		self.jobs.put( ( func, args, kargs ) )
-		self.logger.info( "Added a new job" )
-		#self.logger.info( "Threads left in pool: " + str( self.jobs.qsize() ) )
-		#self.logger.info( "If the Queue full? : " + str( self.jobs.full() ) )
 	
 	def waitAll( self ):
 		self.jobs.join()

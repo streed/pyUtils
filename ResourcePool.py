@@ -2,7 +2,7 @@
 
 	ResourcePool.py -- Provides a resource pool for objects.
 
-	by elchupa
+	by sean
 
 """
 import inject
