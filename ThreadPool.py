@@ -48,15 +48,15 @@ class ThreadPool:
 if __name__ == "__main__":
 
 	from time import sleep
-	def test( t ):
-		print "yay: " + str( t )
+	def test( t, a, b, ten=10 ):
+		print "yay: " + str( t ) + " " + str( a ) + " " + str( b ) + " " + str( ten )
 		sleep( 1 )
 	def kill( event ):
 		sleep( 5 )
 		event.set()
-	pool = ThreadPool( 10000 )
+	pool = ThreadPool( 100 )
 
 	for i in range( 100000 ):
-		pool.addJob( test, i )
+		pool.addJob( test, i, i * 2, i * 3, ten=100 )
 
 	pool.waitAll()
