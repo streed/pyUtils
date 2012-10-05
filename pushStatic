@@ -1,0 +1,97 @@
+"""
+	pushStatic -- Tool to push files to S3 using boto.
+
+	by Sean Reed
+"""
+import os
+import sys
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
+
+#Get a connection to the server here
+conn = S3Connection()
+
+def print_help():
+	print "S3 Helper by Sean Reed"
+	print "Commands:"
+	print "help -- Shows this help message"
+	print "list -- Will list all buckets available."
+	print "create <bucket> -- Will create the bucket"
+	print "<bucket> upload <folder/file> -- Will upload the folder or file, and uploads the folder recursively."
+	print "<bucket> list <folder> -- Will print a list of the files available in the bucket"
+	print "<bucket> delete <folder/file> -- Will delete the folder or file."
+
+def put_file( bucket, filename, public=False ):
+	def status_cb( complete, total ):
+		pass
+
+	key = Key( bucket )
+
+	key.key = filename
+	key.set_contents_from_filename( filename, cb=status_cb, num_cb=10 )
+
+	if public:
+		key.make_public()
+
+	print "Uploaded: %(filename)s" % locals()
+	print "Public: %s" % public
+
+def put_directory( bucket, dirname, public=False ):
+
+	for d in os.listdir( dirname ):
+		if os.path.isdir( os.path.join( dirname, d ) ):
+			put_directory( bucket, os.path.join( dirname, d ), public=public )
+		else:
+			put_file( bucket, os.path.join( dirname, d ), public=public )
+if len( sys.argv ) < 2:
+	print "Useage: %s <commands>" % sys.argv[0]
+	print_help()
+	sys.exit( 0 )
+
+if sys.argv[1] == "help":
+	print_help()
+
+if sys.argv[1] == "list":
+	for b in conn.get_all_buckets():
+		print dir( b )
+		print "Bucket: %s" % b.name
+		print "\tSize: %d" % len( b )
+
+elif sys.argv[1] == "create":
+	bucketName = sys.argv[2]
+
+	bucket = conn.create_bucket( bucketName )
+
+	print "Created bucket: %(bucketName)s" % locals()
+	print "\tLocation: %s" % bucket.get_location()
+	print "\tWebsite Endpoint: %s" % bucket.get_website_endpoint()
+
+elif sys.argv[2] == "upload":
+
+	public = False
+
+	try:
+		public = True if sys.argv[4] == "public" else False
+	except:
+		pass
+
+	bucket = conn.create_bucket( sys.argv[1] )
+	if os.path.isdir( sys.argv[3] ):
+		put_directory( bucket, sys.argv[3], public=public )
+	else:
+		put_file( bucket, sys.argv[3], public=public )
+elif sys.argv[2] == "delete":
+
+	bucket = conn.create_bucket( sys.argv[1] )
+	key = bucket.get_key( sys.argv[3] )
+
+	key.delete()
+
+	print "Deletet: %s" % sys.argv[3] 
+elif sys.argv[2] == "list":
+	bucket = conn.create_bucket( sys.argv[1] )
+
+	print "Listing files: %s" % sys.argv[1] 
+	for key in bucket.list():
+		print "\t%s" % key.name
+
